@@ -4,6 +4,7 @@ from __future__ import absolute_import
 
 import logging
 import logging.handlers
+import socket
 
 import msgpack
 
@@ -33,10 +34,11 @@ class FluentFormatter(logging.Formatter):
             'args', 'asctime', 'created', 'exc_info', 'levelno', 'msecs',
             'msg', 'relativeCreated', 'thread'
         ]
+        self.hostname = socket.gethostname()
 
     def format(self, record):
         message = super(FluentFormatter, self).format(record)
-        d = {'message': message}
+        d = {'message': message, 'hostname': self.hostname}
         for key in record.__dict__.keys():
             if key in self.exclude:
                 continue
