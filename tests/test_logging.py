@@ -5,7 +5,6 @@ import logging
 import socket
 
 import pytest
-from mock import Mock
 import msgpack
 
 import pyfluent.logging
@@ -22,19 +21,14 @@ def pytest_funcarg__record(request):
     return record
 
 
-def pytest_funcarg__logger(request):
-    return LogRecordCapture()
-
-
 class LogRecordCapture(object):
     def __init__(self):
+        self.record = None
         handler = logging.Handler()
         handler.setLevel(logging.DEBUG)
-        self.mock = Mock(spec=handler.emit)
-        handler.emit = self.mock
         self.logger = logging.getLogger('pytest.fluent')
         self.logger.setLevel(logging.DEBUG)
-        self.logger.addHandler(handler)
+        self.logger.addFilter(self)
 
     def __getattr__(self, key):
         if hasattr(self.logger, key):
@@ -42,7 +36,11 @@ class LogRecordCapture(object):
         super(LogRecordCapture, self).__getattr__(key)
 
     def get(self):
-        return self.mock.call_args[0][0]
+        return self.record
+
+    def filter(self, record):
+        self.record = record
+        return False
 
 
 class TestFluentHandler(object):
@@ -63,6 +61,7 @@ class TestFluentHandler(object):
 
 class TestFluentFormatter(object):
     hostname = socket.gethostname()
+    logger = LogRecordCapture()
 
     @pytest.mark.parametrize(('key', 'value', 'expected'), [
         ('name', 'root', ('name', 'root')),
@@ -90,19 +89,20 @@ class TestFluentFormatter(object):
             'threadName': 'MainThread'
         }
 
-    def test_format_with_specify_format(self, logger):
+    def test_format_with_specify_format(self):
         msg = '%(asctime)s %(levelname)s %(message)s'
         fmt = pyfluent.logging.FluentFormatter(msg)
-        logger.info('message for test %d', 1)
-        data = fmt.format(logger.get())
+        self.logger.info('message for test %d', 1)
+        data = fmt.format(self.logger.get())
         assert data['name'] == 'pytest.fluent'
         assert data['message'].endswith(' INFO message for test 1')
         assert 'asctime' not in data
 
-    def test_format_with_extra(self, logger):
+    def test_format_with_extra(self):
         fmt = pyfluent.logging.FluentFormatter()
-        logger.info('message for test', extra={'additional': 'information'})
-        data = fmt.format(logger.get())
+        d = {'additional': 'information'}
+        self.logger.info('message for test', extra=d)
+        data = fmt.format(self.logger.get())
         assert data['name'] == 'pytest.fluent'
         assert data['message'] == 'message for test'
         assert data['additional'] == 'information'
