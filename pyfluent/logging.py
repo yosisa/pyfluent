@@ -32,7 +32,7 @@ class FluentFormatter(logging.Formatter):
         super(FluentFormatter, self).__init__(fmt, datefmt)
         self.exclude = [
             'args', 'asctime', 'created', 'exc_info', 'levelno', 'msecs',
-            'msg', 'relativeCreated', 'thread'
+            'msg', 'relativeCreated', 'thread', 'message'
         ]
         self.hostname = socket.gethostname()
 
