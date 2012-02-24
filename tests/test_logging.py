@@ -6,8 +6,10 @@ import socket
 
 import pytest
 import msgpack
+from mock import MagicMock, Mock, patch, call
 
 import pyfluent.logging
+from pyfluent.logging import SafeFluentHandler
 
 _RECORD_CREATED = 1329904180.791739
 
@@ -57,6 +59,56 @@ class TestFluentHandler(object):
     def test_packing(self, handler, record, expected):
         data = handler.makePickle(record)
         assert msgpack.unpackb(data) == expected
+
+
+class TestSafeFluentHandler(object):
+    def test_queuing(self):
+        handler = SafeFluentHandler(capacity=2)
+        assert handler.queue == []
+        handler.queuing(1)
+        assert handler.queue == [1]
+        handler.queuing(2)
+        assert handler.queue == [1, 2]
+        handler.queuing(3)
+        assert handler.queue == [2, 3]
+
+    def test_send_normal(self):
+        with patch('socket.socket'):
+            handler = SafeFluentHandler()
+            handler.send('message 1')
+            handler.send('message 2')
+            calls = [call('message 1'), call('message 2')]
+            assert handler.sock.sendall.call_args_list == calls
+            assert not handler.queue
+
+    def test_send_fail(self):
+        with patch.object(SafeFluentHandler, 'createSocket'):
+            handler = SafeFluentHandler()
+            handler.send('message 1')
+            assert handler.queue == ['message 1']
+
+    def test_send_retransmit(self):
+        handler = SafeFluentHandler()
+        mock = MagicMock(spec=socket.socket)
+        handler.sock = mock
+        sendall = handler.sock.sendall
+        sendall.side_effect = socket.error()
+        handler.send('message 1')
+        assert sendall.call_args_list == [call('message 1')]
+        assert handler.queue == ['message 1']
+        sendall.reset_mock()
+        handler.sock = mock
+        handler.send('message 2')
+        assert sendall.call_args_list == [call('message 1')]
+        assert handler.queue == ['message 1', 'message 2']
+        sendall.reset_mock()
+        sendall.side_effect = None
+        handler.sock = mock
+        handler.send('message 3')
+        assert sendall.call_args_list == [
+            call('message 1'), call('message 2'), call('message 3')
+        ]
+        assert handler.queue == []
 
 
 class TestFluentFormatter(object):
