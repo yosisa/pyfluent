@@ -27,6 +27,34 @@ class FluentHandler(logging.handlers.SocketHandler):
         return self.packer.pack([tag, record.created, result])
 
 
+class SafeFluentHandler(FluentHandler):
+    def __init__(self, host=None, port=24224, tag=None, capacity=1000):
+        super(SafeFluentHandler, self).__init__(host, port, tag)
+        self.capacity = capacity
+        self.queue = []
+
+    def send(self, data):
+        if self.sock is None:
+            self.createSocket()
+        if not self.sock:
+            self.queuing(data)
+            return
+        try:
+            while len(self.queue):
+                self.sock.sendall(self.queue[0])
+                self.queue.pop(0)
+            self.sock.sendall(data)
+        except socket.error:
+            self.queuing(data)
+            self.sock.close()
+            self.sock = None
+
+    def queuing(self, data):
+        self.queue.append(data)
+        if self.capacity < len(self.queue):
+            self.queue.pop(0)
+
+
 class FluentFormatter(logging.Formatter):
     def __init__(self, fmt=None, datefmt=None):
         super(FluentFormatter, self).__init__(fmt, datefmt)
