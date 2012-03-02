@@ -58,7 +58,7 @@ class TestFluentHandler(object):
 
     def test_packing(self, handler, record, expected):
         data = handler.makePickle(record)
-        assert msgpack.unpackb(data) == expected
+        assert msgpack.unpackb(data, encoding='utf-8') == expected
 
 
 class TestSafeFluentHandler(object):

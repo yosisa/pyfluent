@@ -14,7 +14,7 @@ class FluentHandler(logging.handlers.SocketHandler):
         logging.handlers.SocketHandler.__init__(self, host or 'localhost', port)
         self.closeOnError = 1
         self.tag = tag or ''
-        self.packer = msgpack.Packer()
+        self.packer = msgpack.Packer(encoding='utf-8')
 
     def makePickle(self, record):
         return self.serialize(record)
