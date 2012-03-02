@@ -145,7 +145,7 @@ class TestFluentFormatter(object):
         }
         if sys.version_info[:3] >= (3, 2, 0):
             expected['stack_info'] = None
-        if sys.version_info[:3] < (2, 6, 0):
+        if sys.version_info[:3] < (2, 6, 0) or sys.version_info[:2] == (3, 0):
             del expected['processName']
         assert fmt.format(record) == expected
 
