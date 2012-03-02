@@ -11,7 +11,7 @@ import msgpack
 
 class FluentHandler(logging.handlers.SocketHandler):
     def __init__(self, host=None, port=24224, tag=None):
-        super(FluentHandler, self).__init__(host or 'localhost', port)
+        logging.handlers.SocketHandler.__init__(self, host or 'localhost', port)
         self.closeOnError = 1
         self.tag = tag or ''
         self.packer = msgpack.Packer()
@@ -29,7 +29,7 @@ class FluentHandler(logging.handlers.SocketHandler):
 
 class SafeFluentHandler(FluentHandler):
     def __init__(self, host=None, port=24224, tag=None, capacity=1000):
-        super(SafeFluentHandler, self).__init__(host, port, tag)
+        FluentHandler.__init__(self, host, port, tag)
         self.capacity = capacity
         self.queue = []
 
@@ -57,7 +57,7 @@ class SafeFluentHandler(FluentHandler):
 
 class FluentFormatter(logging.Formatter):
     def __init__(self, fmt=None, datefmt=None):
-        super(FluentFormatter, self).__init__(fmt, datefmt)
+        logging.Formatter.__init__(self, fmt, datefmt)
         self.exclude = [
             'args', 'asctime', 'created', 'exc_info', 'levelno', 'msecs',
             'msg', 'relativeCreated', 'thread', 'message'
@@ -65,7 +65,7 @@ class FluentFormatter(logging.Formatter):
         self.hostname = socket.gethostname()
 
     def format(self, record):
-        message = super(FluentFormatter, self).format(record)
+        message = logging.Formatter.format(self, record)
         d = {'message': message, 'hostname': self.hostname}
         for key in record.__dict__.keys():
             if key in self.exclude:
