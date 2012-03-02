@@ -76,7 +76,7 @@ Please note that:
 
 History
 =======
-X.X.X (XXXX-XX-XX)
+0.1.2 (2012-03-02)
   - support python 2.5, 2.6, 3.0, 3.1, 3.2
 
 0.1.1 (2012-02-26)
