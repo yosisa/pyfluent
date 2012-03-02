@@ -76,6 +76,9 @@ Please note that:
 
 History
 =======
+X.X.X (XXXX-XX-XX)
+  - support python 2.5, 2.6, 3.0, 3.1, 3.2
+
 0.1.1 (2012-02-26)
   - fix issue on install from PyPI
 
