@@ -9,12 +9,18 @@ The primary purpose is to provide pythonic way to transmit JSON message to fluen
 
 For better performance, pyfluent connects to fluentd's in_forward plugin and transmit messages that are serialized by MessagePack. When a connection is failed, messages are queued. And a connection is re-established, queued messages are retransmitted automatically. So, you don't worry about losing messages.
 
-Requirements
+pyfluent distributed under MIT license.
+
+Installation
 ============
 pyfluent requires python 2.5 or above (include python 3).
 
-Usage
-=====
+You can install using pip::
+
+  $ pip install pyfluent
+
+Example
+=======
 Since pyfluent logging library implemented like python standard logging library,
 It is very easy to introduce pyfluent into existing programs.
 
