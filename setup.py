@@ -2,12 +2,13 @@ import os
 from setuptools import find_packages, setup
 
 name = 'pyfluent'
-version = '0.1.1'
+version = '0.1.2'
 readme = os.path.join(os.path.dirname(__file__), 'README.rst')
 long_description = open(readme).read()
 
 classifiers = [
     'Programming Language :: Python',
+    'Programming Language :: Python :: 3',
     'License :: OSI Approved :: MIT License',
     'Operating System :: OS Independent',
     'Development Status :: 3 - Alpha',
