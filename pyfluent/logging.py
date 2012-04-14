@@ -11,7 +11,8 @@ import msgpack
 
 class FluentHandler(logging.handlers.SocketHandler):
     def __init__(self, host=None, port=24224, tag=None):
-        logging.handlers.SocketHandler.__init__(self, host or 'localhost', port)
+        host = host or 'localhost'
+        logging.handlers.SocketHandler.__init__(self, host, port)
         self.closeOnError = 1
         self.tag = tag or ''
         self.packer = msgpack.Packer(encoding='utf-8')
