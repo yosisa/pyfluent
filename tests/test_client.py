@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 
+from __future__ import with_statement
+
 import time
 import socket
 
@@ -8,6 +10,10 @@ import pytest
 from mock import MagicMock, patch, call
 
 from pyfluent import client
+
+import sys
+if sys.version_info[:2] <= (2, 5):
+    next = lambda iter: iter.next()
 
 
 def test_geometric_sequence():
