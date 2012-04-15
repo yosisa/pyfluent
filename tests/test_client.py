@@ -42,7 +42,6 @@ class TestFluentSender(object):
         assert sender.port == 24224
         assert sender.timeout == 1
         assert sender._retry_time == 0
-        assert sender._queue.maxlen == None
         assert isinstance(sender.packer, msgpack.Packer)
 
     def test_make_socket(self, sender):
