@@ -25,12 +25,18 @@ class TestFluentSender(object):
     def pytest_funcarg__sender(self, request):
         return client.FluentSender('test')
 
+    def pytest_funcarg__msgs(self, request):
+        return [
+            {'message': 'test1'}, {'message': 'test2'}, {'message': 'test3'}
+        ]
+
     def test_init(self, sender):
         assert sender.default_tag == 'test'
         assert sender.host == 'localhost'
         assert sender.port == 24224
         assert sender.timeout == 1
         assert sender._retry_time == 0
+        assert sender._queue.maxlen == None
         assert isinstance(sender.packer, msgpack.Packer)
 
     def test_make_socket(self, sender):
@@ -98,3 +104,50 @@ class TestFluentSender(object):
         timestamp = time.time()
         r = sender.serialize(data, tag, timestamp)
         assert msgpack.unpackb(r) == (tag, timestamp, data)
+
+    def test_send_normal(self, sender, msgs):
+        with patch('socket.socket'):
+            timestamp = time.time()
+            f = lambda d: msgpack.packb([sender.default_tag, timestamp, d])
+            sender.send(msgs[0], timestamp=timestamp)
+            sender.send(msgs[1], timestamp=timestamp)
+            assert sender._sock.sendall.call_args_list == [
+                call(f(msgs[0])), call(f(msgs[1]))
+            ]
+            assert len(sender._queue) == 0
+
+    def test_send_fail(self, sender, msgs):
+        with patch('socket.socket') as mock:
+            mock.side_effect = socket.error
+            timestamp = time.time()
+            f = lambda d: msgpack.packb([sender.default_tag, timestamp, d])
+            sender.send(msgs[0], timestamp=timestamp)
+            sender.send(msgs[1], timestamp=timestamp)
+            list(sender._queue) == [f(msgs[0]), f(msgs[1])]
+
+    def test_send_retransmit(self, sender, msgs):
+        mock = MagicMock(spec=socket.socket)
+        sender._sock = mock
+        sendall = sender._sock.sendall
+        sendall.side_effect = socket.error
+        timestamp = time.time()
+        f = lambda d: msgpack.packb([sender.default_tag, timestamp, d])
+        # try 1 then fail
+        sender.send(msgs[0], timestamp=timestamp)
+        assert sendall.call_args_list == [call(f(msgs[0]))]
+        assert list(sender._queue) == [f(msgs[0])]
+        assert sender._sock == None
+        # try 2 then fail
+        sender._sock = mock
+        sendall.reset_mock()
+        sender.send(msgs[1], timestamp=timestamp)
+        assert sendall.call_args_list == [call(f(msgs[0]))]
+        assert list(sender._queue) == [f(msgs[0]), f(msgs[1])]
+        assert sender._sock == None
+        # try 3 then success
+        sender._sock = mock
+        sendall.reset_mock()
+        sendall.side_effect = None
+        sender.send(msgs[2], timestamp=timestamp)
+        assert sendall.call_args_list == [call(f(msgs[x])) for x in range(3)]
+        assert len(sender._queue) == 0
