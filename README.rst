@@ -9,7 +9,7 @@ The primary purpose is to provide pythonic way to transmit JSON message to fluen
 
 For better performance, pyfluent connects to fluentd's in_forward plugin and transmit messages that are serialized by MessagePack. When a connection is failed, messages are queued. And a connection is re-established, queued messages are retransmitted automatically. So, you don't worry about losing messages.
 
-pyfluent distributed under MIT license.
+pyfluent is distributed under Apache License, Version 2.0.
 
 Installation
 ============
