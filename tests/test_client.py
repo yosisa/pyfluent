@@ -29,7 +29,7 @@ class TestFluentSender(object):
         assert sender.host == 'localhost'
         assert sender.port == 24224
         assert sender.timeout == 1
-        assert sender.retry_time == 0
+        assert sender._retry_time == 0
         assert isinstance(sender.packer, msgpack.Packer)
 
     def test_make_socket(self, sender):
@@ -41,15 +41,15 @@ class TestFluentSender(object):
             ]
 
     def test_create_socket(self, sender):
-        sender.retry_time = time.time() + 1000
+        sender._retry_time = time.time() + 1000
         sender._create_socket()
         assert sender._sock == None
-        sender.retry_time = time.time()
+        sender._retry_time = time.time()
         with patch('socket.socket'):
             sender._create_socket()
             assert sender._sock is not None
-            assert sender.retry_time == 0
-            assert next(sender.gs) == 1.0
+            assert sender._retry_time == 0
+            assert next(sender._wait_time) == 1.0
 
     def test_create_socket_error(self, sender):
         with patch('socket.socket') as mock:
@@ -57,4 +57,5 @@ class TestFluentSender(object):
             now = time.time()
             sender._create_socket()
             assert sender._sock is None
-            assert now < sender.retry_time < now + 2.0
+            assert now < sender._retry_time < now + 2.0
+            assert next(sender._wait_time) == 2.0
