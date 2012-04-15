@@ -60,10 +60,6 @@ class FluentSender(object):
             self._queue.append(packed)
             self.close()
 
-    def enqueue(self, data, tag=None, timestamp=None):
-        packed = self._serialize(data, tag, timestamp)
-        self._queue.append(packed)
-
     def _serialize(self, data, tag=None, timestamp=None):
         timestamp = timestamp or time.time()
         tag = tag or self.default_tag
