@@ -4,7 +4,8 @@ import time
 import socket
 
 import msgpack
-from mock import patch, call
+import pytest
+from mock import MagicMock, patch, call
 
 from pyfluent import client
 
@@ -59,3 +60,41 @@ class TestFluentSender(object):
             assert sender._sock is None
             assert now < sender._retry_time < now + 2.0
             assert next(sender._wait_time) == 2.0
+
+    def test_get_socket(self, sender):
+        with patch('socket.socket'):
+            assert sender._sock is None
+            sock1 = sender.socket
+            assert sock1 is not None
+            assert sender._sock is sock1
+            sock2 = sender.socket
+            assert sock1 is sock2
+
+    def test_close(self, sender):
+        sender.close()
+        assert sender._retry_time == 0
+        assert next(sender._wait_time) == 1.0
+        mock = sender._sock = MagicMock(spec=socket.socket)
+        sender.close()
+        assert mock.method_calls == [call.close()]
+        assert sender._sock == None
+        assert sender._retry_time == 0
+        assert next(sender._wait_time) == 1.0
+
+    def test_serialize_default_args(self, sender):
+        now = time.time()
+        r1 = sender.serialize('test data')
+        r2 = sender.serialize({'message': 'test'})
+        r1 = msgpack.unpackb(r1)
+        r2 = msgpack.unpackb(r2)
+        assert r1[0] == r2[0] == sender.default_tag
+        assert now < r1[1] <= r2[1] < now + 2
+        assert r1[2] == {'data': 'test data'}
+        assert r2[2] == {'message': 'test'}
+
+    def test_serialize(self, sender):
+        data = {'string': 'test', 'number': 10}
+        tag = 'pyfluent.test'
+        timestamp = time.time()
+        r = sender.serialize(data, tag, timestamp)
+        assert msgpack.unpackb(r) == (tag, timestamp, data)
