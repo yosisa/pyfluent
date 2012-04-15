@@ -20,8 +20,8 @@ class FluentSender(object):
         self.packer = msgpack.Packer(encoding='utf-8')
 
     def _reset_retry(self):
-        self.retry_time = 0
-        self.gs = geometric_sequence()
+        self._retry_time = 0
+        self._wait_time = geometric_sequence()
 
     @property
     def socket(self):
@@ -31,13 +31,13 @@ class FluentSender(object):
 
     def _create_socket(self):
         now = time.time()
-        if self.retry_time > now:
+        if self._retry_time > now:
             return
         try:
             self._sock = self._make_socket()
             self._reset_retry()
         except socket.error:
-            self.retry_time = now + next(self.gs)
+            self._retry_time = now + next(self._wait_time)
 
     def _make_socket(self):
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
