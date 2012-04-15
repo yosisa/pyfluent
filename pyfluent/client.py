@@ -26,20 +26,20 @@ class FluentSender(object):
     @property
     def socket(self):
         if not self._sock:
-            self.create_socket()
+            self._create_socket()
         return self._sock
 
-    def create_socket(self):
+    def _create_socket(self):
         now = time.time()
         if self.retry_time > now:
             return
         try:
-            self._sock = self.make_socket()
+            self._sock = self._make_socket()
             self._reset_retry()
         except socket.error:
             self.retry_time = now + next(self.gs)
 
-    def make_socket(self):
+    def _make_socket(self):
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         sock.settimeout(self.timeout)
         sock.connect((self.host, self.port))
