@@ -91,8 +91,8 @@ class TestFluentSender(object):
         now = time.time()
         r1 = sender.serialize('test data')
         r2 = sender.serialize({'message': 'test'})
-        r1 = msgpack.unpackb(r1)
-        r2 = msgpack.unpackb(r2)
+        r1 = msgpack.unpackb(r1, encoding='utf-8')
+        r2 = msgpack.unpackb(r2, encoding='utf-8')
         assert r1[0] == r2[0] == sender.default_tag
         assert now < r1[1] <= r2[1] < now + 2
         assert r1[2] == {'data': 'test data'}
@@ -103,7 +103,7 @@ class TestFluentSender(object):
         tag = 'pyfluent.test'
         timestamp = time.time()
         r = sender.serialize(data, tag, timestamp)
-        assert msgpack.unpackb(r) == (tag, timestamp, data)
+        assert msgpack.unpackb(r, encoding='utf-8') == (tag, timestamp, data)
 
     def test_send_normal(self, sender, msgs):
         with patch('socket.socket'):
