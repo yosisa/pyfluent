@@ -44,6 +44,13 @@ class TestFluentSender(object):
         assert sender._retry_time == 0
         assert isinstance(sender.packer, msgpack.Packer)
 
+    def test_queuing(self):
+        sender = client.FluentSender('test', capacity=2)
+        for i in range(3):
+            sender._queue.append(i)
+        expect = [1, 2] if sys.version_info[:2] >= (2, 6) else [0, 1, 2]
+        assert list(sender._queue) == expect
+
     def test_make_socket(self, sender):
         with patch('socket.socket'):
             sock = sender._make_socket()
