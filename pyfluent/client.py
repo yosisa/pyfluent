@@ -47,7 +47,7 @@ class FluentSender(object):
 
     def send(self, data, tag=None, timestamp=None):
         sock = self.socket
-        packed = self._serialize(data, tag, timestamp)
+        packed = self.serialize(data, tag, timestamp)
         if not sock:
             self._queue.append(packed)
             return
@@ -60,7 +60,7 @@ class FluentSender(object):
             self._queue.append(packed)
             self.close()
 
-    def _serialize(self, data, tag=None, timestamp=None):
+    def serialize(self, data, tag=None, timestamp=None):
         timestamp = timestamp or time.time()
         tag = tag or self.default_tag
         if not isinstance(data, dict):
