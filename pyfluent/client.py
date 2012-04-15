@@ -1,10 +1,14 @@
 # -*- coding: utf-8 -*-
 
+import sys
 import time
 import socket
 from collections import deque
 
 import msgpack
+
+if sys.version_info[:2] <= (2, 5):
+    next = lambda iter: iter.next()
 
 
 class FluentSender(object):
@@ -14,14 +18,20 @@ class FluentSender(object):
         self.host = host
         self.port = port
         self.timeout = timeout
+        self.capacity = capacity
         self._sock = None
         self._reset_retry()
-        self._queue = deque(maxlen=capacity)
+        self._queue = self._make_queue()
         self.packer = msgpack.Packer(encoding='utf-8')
 
     def _reset_retry(self):
         self._retry_time = 0
         self._wait_time = geometric_sequence()
+
+    def _make_queue(self):
+        if sys.version_info[:2] <= (2, 5):
+            return deque()
+        return deque(maxlen=self.capacity)
 
     @property
     def socket(self):
