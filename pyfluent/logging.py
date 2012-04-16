@@ -23,11 +23,10 @@ import msgpack
 
 
 class FluentHandler(logging.handlers.SocketHandler):
-    def __init__(self, host=None, port=24224, tag=None):
-        host = host or 'localhost'
+    def __init__(self, host='localhost', port=24224, tag=''):
         logging.handlers.SocketHandler.__init__(self, host, port)
+        self.tag = tag
         self.closeOnError = 1
-        self.tag = tag or ''
         self.packer = msgpack.Packer(encoding='utf-8')
 
     def makePickle(self, record):
@@ -42,9 +41,9 @@ class FluentHandler(logging.handlers.SocketHandler):
 
 
 class SafeFluentHandler(FluentHandler):
-    def __init__(self, host=None, port=24224, tag=None, capacity=1000):
+    def __init__(self, host='localhost', port=24224, tag='', capacity=None):
         FluentHandler.__init__(self, host, port, tag)
-        self.capacity = capacity
+        self.capacity = capacity or 1000
         self.queue = []
 
     def send(self, data):
