@@ -25,11 +25,11 @@ if sys.version_info[:2] <= (2, 5):
 
 
 class FluentSender(object):
-    def __init__(self, tag, host='localhost', port=24224, timeout=1,
-                 capacity=None):
-        self.default_tag = tag
+    def __init__(self, host='localhost', port=24224, tag='',
+                 timeout=1, capacity=None):
         self.host = host
         self.port = port
+        self.tag = tag
         self.timeout = timeout
         self.capacity = capacity
         self._sock = None
@@ -85,7 +85,7 @@ class FluentSender(object):
 
     def serialize(self, data, tag=None, timestamp=None):
         timestamp = timestamp or time.time()
-        tag = tag or self.default_tag
+        tag = tag or self.tag
         if not isinstance(data, dict):
             data = {'data': data}
         return self.packer.pack([tag, timestamp, data])
