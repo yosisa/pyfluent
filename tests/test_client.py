@@ -42,7 +42,7 @@ def test_geometric_sequence():
 
 class TestFluentSender(object):
     def pytest_funcarg__sender(self, request):
-        return client.FluentSender('test')
+        return client.FluentSender(tag='test')
 
     def pytest_funcarg__msgs(self, request):
         return [
@@ -50,7 +50,7 @@ class TestFluentSender(object):
         ]
 
     def test_init(self, sender):
-        assert sender.default_tag == 'test'
+        assert sender.tag == 'test'
         assert sender.host == 'localhost'
         assert sender.port == 24224
         assert sender.timeout == 1
@@ -58,7 +58,7 @@ class TestFluentSender(object):
         assert isinstance(sender.packer, msgpack.Packer)
 
     def test_queuing(self):
-        sender = client.FluentSender('test', capacity=2)
+        sender = client.FluentSender(capacity=2)
         for i in range(3):
             sender._queue.append(i)
         expect = [1, 2] if sys.version_info[:2] >= (2, 6) else [0, 1, 2]
@@ -118,7 +118,7 @@ class TestFluentSender(object):
         r2 = sender.serialize({'message': 'test'})
         r1 = msgpack.unpackb(r1, encoding='utf-8')
         r2 = msgpack.unpackb(r2, encoding='utf-8')
-        assert r1[0] == r2[0] == sender.default_tag
+        assert r1[0] == r2[0] == sender.tag
         assert now < r1[1] <= r2[1] < now + 2
         assert r1[2] == {'data': 'test data'}
         assert r2[2] == {'message': 'test'}
@@ -133,7 +133,7 @@ class TestFluentSender(object):
     def test_send_normal(self, sender, msgs):
         with patch('socket.socket'):
             timestamp = time.time()
-            f = lambda d: msgpack.packb([sender.default_tag, timestamp, d])
+            f = lambda d: msgpack.packb([sender.tag, timestamp, d])
             sender.send(msgs[0], timestamp=timestamp)
             sender.send(msgs[1], timestamp=timestamp)
             assert sender._sock.sendall.call_args_list == [
@@ -145,7 +145,7 @@ class TestFluentSender(object):
         with patch('socket.socket') as mock:
             mock.side_effect = socket.error
             timestamp = time.time()
-            f = lambda d: msgpack.packb([sender.default_tag, timestamp, d])
+            f = lambda d: msgpack.packb([sender.tag, timestamp, d])
             sender.send(msgs[0], timestamp=timestamp)
             sender.send(msgs[1], timestamp=timestamp)
             list(sender._queue) == [f(msgs[0]), f(msgs[1])]
@@ -156,7 +156,7 @@ class TestFluentSender(object):
         sendall = sender._sock.sendall
         sendall.side_effect = socket.error
         timestamp = time.time()
-        f = lambda d: msgpack.packb([sender.default_tag, timestamp, d])
+        f = lambda d: msgpack.packb([sender.tag, timestamp, d])
         # try 1 then fail
         sender.send(msgs[0], timestamp=timestamp)
         assert sendall.call_args_list == [call(f(msgs[0]))]
