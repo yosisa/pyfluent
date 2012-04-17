@@ -120,7 +120,7 @@ class TestFluentSender(object):
         r2 = msgpack.unpackb(r2, encoding='utf-8')
         assert r1[0] == r2[0] == sender.tag
         assert now < r1[1] <= r2[1] < now + 2
-        assert r1[2] == {'data': 'test data'}
+        assert r1[2] == {'message': 'test data'}
         assert r2[2] == {'message': 'test'}
 
     def test_serialize(self, sender):
