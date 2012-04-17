@@ -87,7 +87,7 @@ class FluentSender(object):
         timestamp = timestamp or time.time()
         tag = tag or self.tag
         if not isinstance(data, dict):
-            data = {'data': data}
+            data = {'message': data}
         return self.packer.pack([tag, timestamp, data])
 
     def close(self):
