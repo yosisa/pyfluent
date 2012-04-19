@@ -40,6 +40,12 @@ def test_geometric_sequence():
     ]
 
 
+def test_ensure_dict():
+    assert client.ensure_dict('string') == {'message': 'string'}
+    d = {'message': 'hello', 'message2': 'world'}
+    assert client.ensure_dict(d) == d
+
+
 class TestFluentSender(object):
     def pytest_funcarg__sender(self, request):
         return client.FluentSender(tag='test')
