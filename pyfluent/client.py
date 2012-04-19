@@ -86,8 +86,7 @@ class FluentSender(object):
     def serialize(self, data, tag=None, timestamp=None):
         timestamp = timestamp or time.time()
         tag = tag or self.tag
-        if not isinstance(data, dict):
-            data = {'message': data}
+        data = ensure_dict(data)
         return self.packer.pack([tag, timestamp, data])
 
     def close(self):
@@ -95,6 +94,12 @@ class FluentSender(object):
         if self._sock:
             self._sock.close()
             self._sock = None
+
+
+def ensure_dict(data):
+    if isinstance(data, dict):
+        return data
+    return {'message': data}
 
 
 def geometric_sequence(start=1.0, factor=2.0, limit=30.0):

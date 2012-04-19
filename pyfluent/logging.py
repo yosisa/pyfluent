@@ -21,6 +21,8 @@ import socket
 
 import msgpack
 
+from pyfluent.client import ensure_dict
+
 
 class FluentHandler(logging.handlers.SocketHandler):
     def __init__(self, host='localhost', port=24224, tag=''):
@@ -33,9 +35,7 @@ class FluentHandler(logging.handlers.SocketHandler):
         return self.serialize(record)
 
     def serialize(self, record):
-        result = self.format(record)
-        if not isinstance(result, dict):
-            result = {'message': result}
+        result = ensure_dict(self.format(record))
         tag = ('%s.%s' % (self.tag, record.levelname.lower())).lstrip('.')
         return self.packer.pack([tag, record.created, result])
 
