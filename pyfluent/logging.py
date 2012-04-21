@@ -21,7 +21,7 @@ import socket
 
 import msgpack
 
-from pyfluent.client import ensure_dict
+from pyfluent.client import FluentSender, ensure_dict
 
 
 class FluentHandler(logging.handlers.SocketHandler):
@@ -40,32 +40,26 @@ class FluentHandler(logging.handlers.SocketHandler):
         return self.packer.pack([tag, record.created, result])
 
 
-class SafeFluentHandler(FluentHandler):
-    def __init__(self, host='localhost', port=24224, tag='', capacity=None):
-        FluentHandler.__init__(self, host, port, tag)
-        self.capacity = capacity or 1000
-        self.queue = []
+class SafeFluentHandler(logging.Handler):
+    def __init__(self, host='localhost', port=24224, tag='',
+                 timeout=1, capacity=None):
+        logging.Handler.__init__(self)
+        self.tag = tag
+        self.fluent = FluentSender(host, port, tag, timeout, capacity)
 
-    def send(self, data):
-        if self.sock is None:
-            self.createSocket()
-        if not self.sock:
-            self.queuing(data)
-            return
+    def emit(self, record):
         try:
-            while len(self.queue):
-                self.sock.sendall(self.queue[0])
-                self.queue.pop(0)
-            self.sock.sendall(data)
-        except socket.error:
-            self.queuing(data)
-            self.sock.close()
-            self.sock = None
+            data = self.format(record)
+            tag = ('%s.%s' % (self.tag, record.levelname.lower())).lstrip('.')
+            self.fluent.send(data, tag, record.created)
+        except (KeyboardInterrupt, SystemExit):
+            raise
+        except:
+            self.handleError(record)
 
-    def queuing(self, data):
-        self.queue.append(data)
-        if self.capacity < len(self.queue):
-            self.queue.pop(0)
+    def close(self):
+        self.fluent.close()
+        logging.Handler.close(self)
 
 
 class FluentFormatter(logging.Formatter):
