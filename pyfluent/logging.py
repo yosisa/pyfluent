@@ -1,4 +1,17 @@
 # -*- coding: utf-8 -*-
+# Copyright 2012 Yoshihisa Tanaka
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
 from __future__ import absolute_import
 
@@ -8,51 +21,45 @@ import socket
 
 import msgpack
 
+from pyfluent.client import FluentSender, ensure_dict
+
 
 class FluentHandler(logging.handlers.SocketHandler):
-    def __init__(self, host=None, port=24224, tag=None):
-        logging.handlers.SocketHandler.__init__(self, host or 'localhost', port)
+    def __init__(self, host='localhost', port=24224, tag=''):
+        logging.handlers.SocketHandler.__init__(self, host, port)
+        self.tag = tag
         self.closeOnError = 1
-        self.tag = tag or ''
         self.packer = msgpack.Packer(encoding='utf-8')
 
     def makePickle(self, record):
         return self.serialize(record)
 
     def serialize(self, record):
-        result = self.format(record)
-        if not isinstance(result, dict):
-            result = {'message': result}
+        result = ensure_dict(self.format(record))
         tag = ('%s.%s' % (self.tag, record.levelname.lower())).lstrip('.')
         return self.packer.pack([tag, record.created, result])
 
 
-class SafeFluentHandler(FluentHandler):
-    def __init__(self, host=None, port=24224, tag=None, capacity=1000):
-        FluentHandler.__init__(self, host, port, tag)
-        self.capacity = capacity
-        self.queue = []
+class SafeFluentHandler(logging.Handler):
+    def __init__(self, host='localhost', port=24224, tag='',
+                 timeout=1, capacity=None):
+        logging.Handler.__init__(self)
+        self.tag = tag
+        self.fluent = FluentSender(host, port, tag, timeout, capacity)
 
-    def send(self, data):
-        if self.sock is None:
-            self.createSocket()
-        if not self.sock:
-            self.queuing(data)
-            return
+    def emit(self, record):
         try:
-            while len(self.queue):
-                self.sock.sendall(self.queue[0])
-                self.queue.pop(0)
-            self.sock.sendall(data)
-        except socket.error:
-            self.queuing(data)
-            self.sock.close()
-            self.sock = None
+            data = self.format(record)
+            tag = ('%s.%s' % (self.tag, record.levelname.lower())).lstrip('.')
+            self.fluent.send(data, tag, record.created)
+        except (KeyboardInterrupt, SystemExit):
+            raise
+        except:
+            self.handleError(record)
 
-    def queuing(self, data):
-        self.queue.append(data)
-        if self.capacity < len(self.queue):
-            self.queue.pop(0)
+    def close(self):
+        self.fluent.close()
+        logging.Handler.close(self)
 
 
 class FluentFormatter(logging.Formatter):

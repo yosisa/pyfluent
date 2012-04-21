@@ -1,4 +1,17 @@
 # -*- coding: utf-8 -*-
+# Copyright 2012 Yoshihisa Tanaka
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
 from __future__ import with_statement
 
@@ -65,53 +78,52 @@ class TestFluentHandler(object):
 
 
 class TestSafeFluentHandler(object):
-    def test_queuing(self):
-        handler = SafeFluentHandler(capacity=2)
-        assert handler.queue == []
-        handler.queuing(1)
-        assert handler.queue == [1]
-        handler.queuing(2)
-        assert handler.queue == [1, 2]
-        handler.queuing(3)
-        assert handler.queue == [2, 3]
+    def pytest_funcarg__handler(self, request):
+        handler = pyfluent.logging.SafeFluentHandler()
+        handler.fluent = MagicMock(spec=handler.fluent.__class__)
+        return handler
 
-    def test_send_normal(self):
-        with patch('socket.socket'):
-            handler = SafeFluentHandler()
-            handler.send('message 1')
-            handler.send('message 2')
-            calls = [call('message 1'), call('message 2')]
-            assert handler.sock.sendall.call_args_list == calls
-            assert not handler.queue
-
-    def test_send_fail(self):
-        with patch.object(SafeFluentHandler, 'createSocket'):
-            handler = SafeFluentHandler()
-            handler.send('message 1')
-            assert handler.queue == ['message 1']
-
-    def test_send_retransmit(self):
-        handler = SafeFluentHandler()
-        mock = MagicMock(spec=socket.socket)
-        handler.sock = mock
-        sendall = handler.sock.sendall
-        sendall.side_effect = socket.error()
-        handler.send('message 1')
-        assert sendall.call_args_list == [call('message 1')]
-        assert handler.queue == ['message 1']
-        sendall.reset_mock()
-        handler.sock = mock
-        handler.send('message 2')
-        assert sendall.call_args_list == [call('message 1')]
-        assert handler.queue == ['message 1', 'message 2']
-        sendall.reset_mock()
-        sendall.side_effect = None
-        handler.sock = mock
-        handler.send('message 3')
-        assert sendall.call_args_list == [
-            call('message 1'), call('message 2'), call('message 3')
+    def test_normal(self, handler, record):
+        handler.emit(record)
+        assert handler.fluent.method_calls == [
+            call.send('message 1', 'info', record.created)
         ]
-        assert handler.queue == []
+
+    def test_default_tag(self, record):
+        handler = pyfluent.logging.SafeFluentHandler(tag='pyfluent')
+        handler.fluent = MagicMock(spec=handler.fluent.__class__)
+        handler.emit(record)
+        assert handler.fluent.method_calls == [
+            call.send('message 1', 'pyfluent.info', record.created)
+        ]
+
+    def test_with_formatter(self, handler, record):
+        fmt = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+        fmt = logging.Formatter(fmt, '%Y-%m-%d %H:%M:%S')
+        handler.setFormatter(fmt)
+        handler.emit(record)
+        message = '2012-02-22 18:49:40 - root - INFO - message 1'
+        assert handler.fluent.method_calls == [
+            call.send(message, 'info', record.created)
+        ]
+
+    def test_close(self, handler):
+        with patch('logging.Handler') as mock:
+            handler.close()
+            assert mock.method_calls == [call.close(handler)]
+
+    def test_handle_error(self, handler, record):
+        handler.fluent.send.side_effect = SystemExit
+        with pytest.raises(SystemExit):
+            handler.emit(record)
+        handler.fluent.send.side_effect = KeyboardInterrupt
+        with pytest.raises(KeyboardInterrupt):
+            handler.emit(record)
+        handler.fluent.send.side_effect = Exception
+        mock = Mock()
+        handler.handleError = mock
+        handler.emit(record)
+        assert mock.call_args_list == [call(record)]
 
 
 class TestFluentFormatter(object):
