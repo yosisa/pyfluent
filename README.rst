@@ -105,7 +105,7 @@ Please note that:
 
 History
 =======
-X.X.X (XXXX-XX-XX)
+0.2.0 (2012-04-21)
   - Add FluentSender.
   - Rewrite SafeFluentHandler to use FluentSender internally.
   - Change license to Apache License, Version 2.0 from MIT License.

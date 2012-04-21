@@ -17,7 +17,7 @@ import os
 from setuptools import find_packages, setup
 
 name = 'pyfluent'
-version = '0.1.2'
+version = '0.2.0'
 readme = os.path.join(os.path.dirname(__file__), 'README.rst')
 long_description = open(readme).read()
 
