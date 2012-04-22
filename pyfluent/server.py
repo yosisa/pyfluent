@@ -22,24 +22,28 @@ else:
     import socketserver
 
 
-class TCPServer(socketserver.TCPServer):
+class ThreadingTCPServer(socketserver.ThreadingMixIn, socketserver.TCPServer):
     allow_reuse_address = True
 
 
-class UDPServer(socketserver.UDPServer):
+class ThreadingUDPServer(socketserver.ThreadingMixIn, socketserver.UDPServer):
     allow_reuse_address = True
 
 
 class MessageHandler(socketserver.BaseRequestHandler):
     def handle(self):
         data = self.request.recv(1024)
-        print data
+        while data:
+            print data
+            data = self.request.recv(1024)
 
 
 class HeartbeatHandler(socketserver.BaseRequestHandler):
     def handle(self):
         data = self.request.recv(1024)
-        print data
+        while data:
+            print data
+            data = self.request.recv(1024)
 
 
 class FluentServer(object):
@@ -58,10 +62,10 @@ class FluentServer(object):
         self._shutdown_hb_server(self.hb_server, self.hb_runner)
 
     def _make_msg_server(self, host, port):
-        return TCPServer((host, port), MessageHandler)
+        return ThreadingTCPServer((host, port), MessageHandler)
 
     def _make_hb_server(self, host, port):
-        return UDPServer((host, port), HeartbeatHandler)
+        return ThreadingUDPServer((host, port), HeartbeatHandler)
 
     def _start_msg_server(self, server):
         thread = threading.Thread(target=server.serve_forever)
