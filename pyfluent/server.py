@@ -47,12 +47,35 @@ class UDPServer(socketserver.UDPServer):
 class Unpacker(object):
     def __init__(self, callback):
         self.unpacker = msgpack.Unpacker()
+        self.decoder = msgpack.Unpacker()
         self.callback = callback
 
     def process(self, data):
         self.unpacker.feed(data)
         for message in self.unpacker:
-            self.callback(message)
+            self._process_by_type(*message)
+
+    def _process_by_type(self, tag, data, rest=None):
+        if isinstance(data, basestring):
+            self._on_msgpack(tag, data)
+        elif isinstance(data, tuple):
+            self._on_list(tag, data)
+        else:
+            self._on_plain(tag, data, rest)
+
+    def _on_msgpack(self, tag, data):
+        self.decoder.feed(data)
+        self._on_list(tag, list(self.decoder))
+
+    def _on_list(self, tag, data):
+        if isinstance(data[0], tuple):
+            for item in data:
+                self._on_list(tag, item)
+        else:
+            self._on_plain(tag, *data)
+
+    def _on_plain(self, tag, timestamp, record):
+        self.callback(tag, timestamp, record)
 
 
 class MessageHandler(socketserver.BaseRequestHandler):
@@ -107,9 +130,9 @@ class FluentServer(object):
 
 
 @fluent_handler
-def foo(data):
+def foo(tag, timestamp, record):
     from pprint import pprint
-    pprint(data)
+    pprint([tag, timestamp, record])
 
 
 if __name__ == '__main__':
