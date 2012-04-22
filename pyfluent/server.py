@@ -40,7 +40,7 @@ class ThreadingTCPServer(socketserver.ThreadingMixIn, socketserver.TCPServer):
     allow_reuse_address = True
 
 
-class ThreadingUDPServer(socketserver.ThreadingMixIn, socketserver.UDPServer):
+class UDPServer(socketserver.UDPServer):
     allow_reuse_address = True
 
 
@@ -66,10 +66,8 @@ class MessageHandler(socketserver.BaseRequestHandler):
 
 class HeartbeatHandler(socketserver.BaseRequestHandler):
     def handle(self):
-        data = self.request.recv(1024)
-        while data:
-            print data
-            data = self.request.recv(1024)
+        sock = self.request[1]
+        sock.sendto('', self.client_address)
 
 
 class FluentServer(object):
@@ -91,7 +89,7 @@ class FluentServer(object):
         return ThreadingTCPServer((host, port), MessageHandler)
 
     def _make_hb_server(self, host, port):
-        return ThreadingUDPServer((host, port), HeartbeatHandler)
+        return UDPServer((host, port), HeartbeatHandler)
 
     def _start_msg_server(self, server):
         thread = threading.Thread(target=server.serve_forever)
