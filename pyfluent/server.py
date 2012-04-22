@@ -16,6 +16,8 @@
 import sys
 import threading
 
+import msgpack
+
 if sys.version_info[0] < 3:
     import SocketServer as socketserver
 else:
@@ -30,11 +32,24 @@ class ThreadingUDPServer(socketserver.ThreadingMixIn, socketserver.UDPServer):
     allow_reuse_address = True
 
 
+class Unpacker(object):
+    def __init__(self, callback):
+        self.unpacker = msgpack.Unpacker()
+        self.callback = callback
+
+    def process(self, data):
+        self.unpacker.feed(data)
+        for message in self.unpacker:
+            self.callback(message)
+
+
 class MessageHandler(socketserver.BaseRequestHandler):
     def handle(self):
+        from pprint import pprint
+        unpacker = Unpacker(pprint)
         data = self.request.recv(1024)
         while data:
-            print data
+            unpacker.process(data)
             data = self.request.recv(1024)
 
 
