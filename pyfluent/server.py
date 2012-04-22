@@ -24,6 +24,18 @@ else:
     import socketserver
 
 
+def _do_nothing(data):
+    pass
+
+_handler = _do_nothing
+
+
+def fluent_handler(func):
+    global _handler
+    _handler = func
+    return func
+
+
 class ThreadingTCPServer(socketserver.ThreadingMixIn, socketserver.TCPServer):
     allow_reuse_address = True
 
@@ -45,8 +57,7 @@ class Unpacker(object):
 
 class MessageHandler(socketserver.BaseRequestHandler):
     def handle(self):
-        from pprint import pprint
-        unpacker = Unpacker(pprint)
+        unpacker = Unpacker(_handler)
         data = self.request.recv(1024)
         while data:
             unpacker.process(data)
@@ -95,6 +106,12 @@ class FluentServer(object):
 
     def _shutdown_hb_server(self, server, runner):
         server.shutdown()
+
+
+@fluent_handler
+def foo(data):
+    from pprint import pprint
+    pprint(data)
 
 
 if __name__ == '__main__':
