@@ -27,12 +27,12 @@ else:
 def _do_nothing(data):
     pass
 
-_handler = _do_nothing
+_callback = _do_nothing
 
 
-def fluent_handler(func):
-    global _handler
-    _handler = func
+def fluent_callback(func):
+    global _callback
+    _callback = func
     return func
 
 
@@ -80,7 +80,7 @@ class Unpacker(object):
 
 class MessageHandler(socketserver.BaseRequestHandler):
     def handle(self):
-        unpacker = Unpacker(_handler)
+        unpacker = Unpacker(_callback)
         data = self.request.recv(1024)
         while data:
             unpacker.process(data)
@@ -134,7 +134,7 @@ from pprint import pprint
 _queue = Queue.Queue()
 
 
-@fluent_handler
+@fluent_callback
 def enque(tag, timestamp, record):
     _queue.put([tag, timestamp, record])
 
