@@ -127,33 +127,3 @@ class FluentServer(object):
 
     def _shutdown_hb_server(self, server, runner):
         server.shutdown()
-
-
-import Queue
-from pprint import pprint
-_queue = Queue.Queue()
-
-
-@fluent_callback
-def enque(tag, timestamp, record):
-    _queue.put([tag, timestamp, record])
-
-
-def worker():
-    while True:
-        pprint(_queue.get())
-
-
-if __name__ == '__main__':
-    import time
-    sv = FluentServer('0.0.0.0', 10000)
-    sv.start()
-    t = threading.Thread(target=worker)
-    t.daemon = True
-    t.start()
-    try:
-        while True:
-            time.sleep(0.2)
-    except:
-        pass
-    sv.shutdown()
