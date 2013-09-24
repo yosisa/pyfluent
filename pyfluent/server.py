@@ -53,29 +53,12 @@ class Unpacker(object):
     def process(self, data):
         self.unpacker.feed(data)
         for message in self.unpacker:
-            self._process_by_type(*message)
+            self._process(*message)
 
-    def _process_by_type(self, tag, data, rest=None):
-        if isinstance(data, basestring):
-            self._on_msgpack(tag, data)
-        elif isinstance(data, tuple):
-            self._on_list(tag, data)
-        else:
-            self._on_plain(tag, data, rest)
-
-    def _on_msgpack(self, tag, data):
-        self.decoder.feed(data)
-        self._on_list(tag, list(self.decoder))
-
-    def _on_list(self, tag, data):
-        if isinstance(data[0], tuple):
-            for item in data:
-                self._on_list(tag, item)
-        else:
-            self._on_plain(tag, *data)
-
-    def _on_plain(self, tag, timestamp, record):
-        self.callback(tag, timestamp, record)
+    def _process(self, tag, events):
+        self.decoder.feed(events)
+        for event in self.decoder:
+            self.callback(tag, *event)
 
 
 class MessageHandler(socketserver.BaseRequestHandler):
