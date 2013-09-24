@@ -20,8 +20,10 @@ import msgpack
 
 if sys.version_info[0] < 3:
     import SocketServer as socketserver
+    HEARTBEAT_MSG = '\0'
 else:
     import socketserver
+    HEARTBEAT_MSG = b'\0'
 
 
 def _do_nothing(data):
@@ -73,7 +75,7 @@ class MessageHandler(socketserver.BaseRequestHandler):
 class HeartbeatHandler(socketserver.BaseRequestHandler):
     def handle(self):
         sock = self.request[1]
-        sock.sendto('', self.client_address)
+        sock.sendto(HEARTBEAT_MSG, self.client_address)
 
 
 class FluentServer(object):
