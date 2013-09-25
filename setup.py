@@ -43,7 +43,7 @@ setup(name=name,
       long_description=long_description,
       classifiers=classifiers,
       keywords=['logging', 'fluentd', 'json'],
-      install_requires=['msgpack-python>=0.1.12'],
+      install_requires=['msgpack-python>=0.3.0'],
       tests_require=['pytest', 'mock'],
       packages=find_packages(exclude=['tests'])
 )
