@@ -134,7 +134,7 @@ class TestFluentSender(object):
         tag = 'pyfluent.test'
         timestamp = time.time()
         r = sender.serialize(data, tag, timestamp)
-        assert msgpack.unpackb(r, encoding='utf-8') == (tag, timestamp, data)
+        assert msgpack.unpackb(r, encoding='utf-8') == [tag, timestamp, data]
 
     def test_send_normal(self, sender, msgs):
         with patch('socket.socket'):
