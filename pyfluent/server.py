@@ -26,7 +26,7 @@ else:
     HEARTBEAT_MSG = b'\0'
 
 
-def _do_nothing(data):
+def _do_nothing(tag, time, data):
     pass
 
 _callback = _do_nothing
