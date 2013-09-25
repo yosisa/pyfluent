@@ -1,0 +1,14 @@
+{
+    "folders": [
+        {"path": ".",
+         "folder_exclude_patterns": [
+             ".tox", "build", "dist", "*.egg-info", "__pycache__", "log", "htmlcov"
+         ],
+         "file_exclude_patterns": ["*.pyc", ".coverage"]}
+    ],
+    "settings": {
+        "tab_size": 4
+    },
+    "build_systems": [
+    ]
+}
