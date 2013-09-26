@@ -30,11 +30,11 @@ def test_fluent_callback(cb):
 
 @pytest.mark.parametrize(('bin', 'expected'), [
     ([b"\x92\xa4test\xdb\x00\x00\x00\x14\x92\xceRC\x16'\x81\xa7message\xa4test"],
-     [('test', 1380128295, {'message': 'test'})]),
+     [(b'test', 1380128295, {b'message': b'test'})]),
     ([b'\x92\xa4test\xdb\x00\x00\x00*\x92\xceRC\x18\xa6\x81\xa7me'
       b'ssage\xa5hello\x92\xceRC\x18\xa6\x81\xa7message\xa5world'],
-     [('test', 1380128934, {'message': 'hello'}),
-      ('test', 1380128934, {'message': 'world'})])
+     [(b'test', 1380128934, {b'message': b'hello'}),
+      (b'test', 1380128934, {b'message': b'world'})])
 ])
 def test_MessageHandler(bin, expected):
     request = MagicMock()

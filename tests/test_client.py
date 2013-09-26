@@ -46,7 +46,7 @@ def test_ensure_dict():
 
 class TestFluentSender(object):
     def pytest_funcarg__sender(self, request):
-        return client.FluentSender(tag='test')
+        return client.FluentSender(tag=b'test')
 
     def pytest_funcarg__msgs(self, request):
         return [
@@ -54,7 +54,7 @@ class TestFluentSender(object):
         ]
 
     def test_init(self, sender):
-        assert sender.tag == 'test'
+        assert sender.tag == b'test'
         assert sender.host == 'localhost'
         assert sender.port == 24224
         assert sender.timeout == 1
@@ -131,7 +131,7 @@ class TestFluentSender(object):
 
     def test_serialize(self, sender):
         data = {'string': 'test', 'number': 10}
-        tag = 'pyfluent.test'
+        tag = b'pyfluent.test'
         timestamp = time.time()
         r = sender.serialize(data, tag, timestamp)
         tag_, events = msgpack.unpackb(r)
