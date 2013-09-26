@@ -87,7 +87,8 @@ class FluentSender(object):
         timestamp = timestamp or time.time()
         tag = tag or self.tag
         data = ensure_dict(data)
-        return self.packer.pack([tag, timestamp, data])
+        events = self.packer.pack([timestamp, data])
+        return self.packer.pack([tag, events])
 
     def close(self):
         self._reset_retry()

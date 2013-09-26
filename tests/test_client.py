@@ -120,24 +120,28 @@ class TestFluentSender(object):
         now = time.time()
         r1 = sender.serialize('test data')
         r2 = sender.serialize({'message': 'test'})
-        r1 = msgpack.unpackb(r1, encoding='utf-8')
-        r2 = msgpack.unpackb(r2, encoding='utf-8')
+        r1 = msgpack.unpackb(r1)
+        r2 = msgpack.unpackb(r2)
+        d1 = msgpack.unpackb(r1[1], encoding='utf-8')
+        d2 = msgpack.unpackb(r2[1], encoding='utf-8')
         assert r1[0] == r2[0] == sender.tag
-        assert now < r1[1] <= r2[1] < now + 2
-        assert r1[2] == {'message': 'test data'}
-        assert r2[2] == {'message': 'test'}
+        assert now < d1[0] <= d2[0] < now + 2
+        assert d1[1] == {'message': 'test data'}
+        assert d2[1] == {'message': 'test'}
 
     def test_serialize(self, sender):
         data = {'string': 'test', 'number': 10}
         tag = 'pyfluent.test'
         timestamp = time.time()
         r = sender.serialize(data, tag, timestamp)
-        assert msgpack.unpackb(r, encoding='utf-8') == [tag, timestamp, data]
+        tag_, events = msgpack.unpackb(r)
+        assert tag_ == tag
+        assert msgpack.unpackb(events, encoding='utf-8') == [timestamp, data]
 
     def test_send_normal(self, sender, msgs):
         with patch('socket.socket'):
             timestamp = time.time()
-            f = lambda d: msgpack.packb([sender.tag, timestamp, d])
+            f = lambda d: msgpack.packb([sender.tag, msgpack.packb([timestamp, d])])
             sender.send(msgs[0], timestamp=timestamp)
             sender.send(msgs[1], timestamp=timestamp)
             assert sender._sock.sendall.call_args_list == [
@@ -160,7 +164,7 @@ class TestFluentSender(object):
         sendall = sender._sock.sendall
         sendall.side_effect = socket.error
         timestamp = time.time()
-        f = lambda d: msgpack.packb([sender.tag, timestamp, d])
+        f = lambda d: msgpack.packb([sender.tag, msgpack.packb([timestamp, d])])
         # try 1 then fail
         sender.send(msgs[0], timestamp=timestamp)
         assert sendall.call_args_list == [call(f(msgs[0]))]
