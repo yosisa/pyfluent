@@ -17,7 +17,7 @@ import os
 from setuptools import find_packages, setup
 
 name = 'pyfluent'
-version = '0.2.0'
+version = '0.2.1'
 readme = os.path.join(os.path.dirname(__file__), 'README.rst')
 long_description = open(readme).read()
 
@@ -26,7 +26,7 @@ classifiers = [
     'Programming Language :: Python :: 3',
     'License :: OSI Approved :: Apache Software License',
     'Operating System :: OS Independent',
-    'Development Status :: 3 - Alpha',
+    'Development Status :: 4 - Beta',
     'Intended Audience :: Developers',
     'Topic :: Software Development :: Libraries :: Python Modules',
     'Topic :: System :: Logging',

@@ -3,8 +3,6 @@ Introduction
 pyfluent is a python client library for `Fluentd <http://fluentd.org/>`_.
 It is simple, fast and reliable.
 
-**Notice: since this is early release, the api may change in a future version.**
-
 The primary purpose is to provide pythonic way to transmit JSON message to fluentd.
 
 For better performance, pyfluent connects to fluentd's in_forward plugin and transmit messages that are serialized by MessagePack.
@@ -13,6 +11,8 @@ When a connection is re-established, all queued messages are retransmitted autom
 So, you don't worry about losing messages.
 
 pyfluent is available under Apache License, Version 2.0.
+
+*Note: due to long time inactivity, I decided to reset the develop branch to 0.2.0 release. All commits in the old develop branch now exist in the server branch.*
 
 Installation
 ============
