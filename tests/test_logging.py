@@ -68,8 +68,8 @@ class TestFluentHandler(object):
         handler_without_tag = pyfluent.logging.FluentHandler()
         handler_with_tag = pyfluent.logging.FluentHandler(tag='test')
         metafunc.parametrize(('handler', 'expected'), [
-            (handler_without_tag, ('info', _RECORD_CREATED, body)),
-            (handler_with_tag, ('test.info', _RECORD_CREATED, body)),
+            (handler_without_tag, ['info', _RECORD_CREATED, body]),
+            (handler_with_tag, ['test.info', _RECORD_CREATED, body]),
         ])
 
     def test_packing(self, handler, record, expected):

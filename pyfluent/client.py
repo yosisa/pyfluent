@@ -16,6 +16,8 @@
 import sys
 import time
 import socket
+import select
+import errno
 from collections import deque
 
 import msgpack
@@ -66,22 +68,36 @@ class FluentSender(object):
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         sock.settimeout(self.timeout)
         sock.connect((self.host, self.port))
+        # cancel timeout and set nonblocking expressly
+        sock.setblocking(False)
         return sock
 
     def send(self, data, tag=None, timestamp=None):
-        sock = self.socket
-        packed = self.serialize(data, tag, timestamp)
-        if not sock:
-            self._queue.append(packed)
-            return
-        try:
-            while len(self._queue):
-                sock.sendall(self._queue[0])
-                self._queue.popleft()
-            sock.sendall(packed)
-        except socket.error:
-            self._queue.append(packed)
-            self.close()
+        self._queue.append(self.serialize(data, tag, timestamp))
+        deadline = time.time() + self.timeout
+
+        while deadline > time.time():
+            sock = self.socket
+            if not sock:
+                return
+
+            try:
+                socks = [sock]
+                readable, writeable, _ = select.select(socks, socks, [], 0)
+
+                if sock in readable and len(sock.recv(1024)) == 0:
+                    self.close()
+                    continue
+
+                if sock in writeable:
+                    while len(self._queue):
+                        sock.sendall(self._queue[0])
+                        self._queue.popleft()
+                return
+            except socket.error as e:
+                if e.args[0] in (errno.EWOULDBLOCK, errno.EAGAIN):
+                    continue
+                self.close()
 
     def serialize(self, data, tag=None, timestamp=None):
         timestamp = timestamp or time.time()
