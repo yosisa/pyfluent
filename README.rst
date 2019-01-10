@@ -105,6 +105,9 @@ Please note that:
 
 History
 =======
+0.2.1 (2019-01-10)
+  - Improve reliability
+
 0.2.0 (2012-04-21)
   - Add FluentSender.
   - Rewrite SafeFluentHandler to use FluentSender internally.
